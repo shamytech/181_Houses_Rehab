@@ -1,16 +1,23 @@
 """
-صفحة البنود والأعمال
+صفحة البنود والأعمال المحسنة مع حسابات التكلفة
 """
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from pathlib import Path
 import sys
 
-#ضافة مسار المشروع
+# إضافة مسار المشروع
 sys.path.append(str(Path(__file__).parent.parent))
 
 from config import *
 from utils.data_loader import load_main_items, load_sub_items
+from utils.boqs import (
+    load_boqs_with_mapping,
+    calculate_all_houses_costs,
+    calculate_house_cost,
+    get_cost_statistics
+)
 
 # إعدادات الصفحة
 st.set_page_config(**PAGE_CONFIG)
@@ -18,10 +25,14 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # العنوان
 st.markdown("""
-    <h1 style='text-align: center; color: #0D47A1;'>
-        🔧 البنود والأعمال
-    </h1>
-    <hr style='margin: 20px 0;'>
+    <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #26A69A 0%, #009688 100%); border-radius: 10px; margin-bottom: 20px;'>
+        <h1 style='color: white; margin: 0;'>
+            🔧 البنود والأعمال
+        </h1>
+        <p style='color: #E0F2F1; margin: 10px 0 0 0;'>
+            تفاصيل أعمال إعادة التأهيل مع التكاليف التقديرية
+        </p>
+    </div>
 """, unsafe_allow_html=True)
 
 # تحميل البيانات
@@ -29,271 +40,327 @@ st.markdown("""
 def load_data():
     file_path = Path(__file__).parent.parent / DATA_PATH
     if not file_path.exists():
-        return None, None
+        return None, None, None
     
     main_items = load_main_items(str(file_path))
     sub_items = load_sub_items(str(file_path))
+    boqs = load_boqs_with_mapping(str(file_path))
     
-    return main_items, sub_items
+    return main_items, sub_items, boqs
 
-main_items_df, sub_items_df = load_data()
+main_items_df, sub_items_df, boqs_df = load_data()
 
 if main_items_df is not None and not main_items_df.empty:
     
-    # ملخص البنود
-    st.markdown("### 📋 ملخص البنود")
+    # حساب تكاليف جميع المنازل
+    if sub_items_df is not None and boqs_df is not None and not boqs_df.empty:
+        costs_df = calculate_all_houses_costs(sub_items_df, boqs_df)
+        cost_stats = get_cost_statistics(costs_df)
+    else:
+        costs_df = None
+        cost_stats = {}
     
-    col1, col2, col3 = st.columns(3)
+    # ملخص البنود والتكاليف
+    st.markdown("## 📊 ملخص المشروع")
+    
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         total_main = len(main_items_df)
-        st.metric("🔧 إجمالي البنود الرئيسية", total_main)
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+            <div style='font-size: 3em; margin-bottom: 10px;'>🔧</div>
+            <div style='font-size: 2.5em; font-weight: bold;'>{total_main}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>البنود الرئيسية</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col2:
         if sub_items_df is not None:
             total_sub = len(sub_items_df)
-            st.metric("📝 إجمالي البنود الفرعية", total_sub)
         else:
-            st.metric("📝 إجمالي البنود الفرعية", 0)
+            total_sub = 0
+        
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+            <div style='font-size: 3em; margin-bottom: 10px;'>📝</div>
+            <div style='font-size: 2.5em; font-weight: bold;'>{total_sub}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>البنود الفرعية</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col3:
         unique_houses = main_items_df['_parent_index'].nunique() if '_parent_index' in main_items_df.columns else 0
-        st.metric("🏠 عدد المنازل", unique_houses)
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+            <div style='font-size: 3em; margin-bottom: 10px;'>🏠</div>
+            <div style='font-size: 2.5em; font-weight: bold;'>{unique_houses}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>المنازل</div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    st.markdown("---")
+    with col4:
+        total_cost = cost_stats.get('الإجمالي', 0)
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #26A69A 0%, #009688 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+            <div style='font-size: 3em; margin-bottom: 10px;'>💰</div>
+            <div style='font-size: 2.5em; font-weight: bold;'>${total_cost:,.0f}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>التكلفة الإجمالية</div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    # جدول البنود الرئيسية
-    st.markdown("### 🔧 البنود الرئيسية")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # تجميع البنود الرئيسية
-    if 'البند الرئيسي' in main_items_df.columns:
-        main_summary = main_items_df.groupby('البند الرئيسي').agg({
-            '_parent_index': 'count'
-        }).reset_index()
-        main_summary.columns = ['البند الرئيسي', 'عدد المنازل']
-        main_summary = main_summary.sort_values('عدد المنازل', ascending=False)
-        
-        # عرض الجدول
-        st.dataframe(
-            main_summary,
-            use_container_width=True,
-            hide_index=True,
-            height=300
-        )
-        
-        # مخطط البنود الرئيسية
-        st.markdown("#### 📊 توزيع البنود الرئيسية")
-        
-        import plotly.express as px
-        
-        fig = px.bar(
-            main_summary,
-            x='البند الرئيسي',
-            y='عدد المنازل',
-            text='عدد المنازل',
-            color='عدد المنازل',
-            color_continuous_scale='Blues'
-        )
-        
-        fig.update_traces(textposition='outside')
-        fig.update_layout(
-            showlegend=False,
-            height=400,
-            xaxis_title="",
-            yaxis_title="عدد المنازل",
-            font=dict(family="Cairo, sans-serif", size=14),
-            xaxis_tickangle=-45
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+    # التبويبات
+    tab1, tab2, tab3, tab4 = st.tabs(["📋 البنود الرئيسية", "📝 البنود الفرعية", "💰 التكاليف", "📊 التحليلات"])
     
-    st.markdown("---")
+    with tab1:
+        st.markdown("### 🔧 البنود الرئيسية")
+        
+        # تجميع البنود الرئيسية
+        if 'البند الرئيسي' in main_items_df.columns:
+            main_summary = main_items_df.groupby('البند الرئيسي').agg({
+                '_parent_index': 'count'
+            }).reset_index()
+            main_summary.columns = ['البند الرئيسي', 'عدد المنازل']
+            main_summary = main_summary.sort_values('عدد المنازل', ascending=False)
+            
+            # عرض الجدول
+            st.dataframe(
+                main_summary,
+                use_container_width=True,
+                hide_index=True,
+                height=350
+            )
+            
+            # مخطط البنود الرئيسية
+            st.markdown("#### 📊 توزيع البنود الرئيسية")
+            
+            fig = px.bar(
+                main_summary,
+                y='البند الرئيسي',
+                x='عدد المنازل',
+                text='عدد المنازل',
+                orientation='h',
+                color='عدد المنازل',
+                color_continuous_scale='Teal'
+            )
+            
+            fig.update_traces(textposition='outside', textfont_size=14)
+            fig.update_layout(
+                showlegend=False,
+                height=500,
+                xaxis_title="عدد المنازل",
+                yaxis_title="",
+                font=dict(family="Tajawal, sans-serif", size=14)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
     
-    # البنود الفرعية
-    if sub_items_df is not None and not sub_items_df.empty:
+    with tab2:
         st.markdown("### 📝 البنود الفرعية")
         
-        # فلترة حسب البند الرئيسي
-        if 'البند الرئيسي' in sub_items_df.columns:
-            main_items_list = ['الكل'] + sorted(sub_items_df['البند الرئيسي'].dropna().unique().tolist())
-            selected_main_item = st.selectbox("🔍 اختر البند الرئيسي", main_items_list)
+        if sub_items_df is not None and not sub_items_df.empty:
+            # فلترة حسب البند الرئيسي
+            if 'البند الرئيسي' in sub_items_df.columns:
+                main_items_list = ['الكل'] + sorted(sub_items_df['البند الرئيسي'].dropna().unique().tolist())
+                selected_main_item = st.selectbox("🔍 اختر البند الرئيسي", main_items_list, key="main_filter")
+                
+                # فلترة البيانات
+                if selected_main_item != 'الكل':
+                    filtered_sub = sub_items_df[sub_items_df['البند الرئيسي'] == selected_main_item]
+                else:
+                    filtered_sub = sub_items_df
+                
+                # عرض الإحصائيات
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("📝 عدد البنود", len(filtered_sub))
+                
+                with col2:
+                    if 'الكمية' in filtered_sub.columns:
+                        total_quantity = filtered_sub['الكمية'].sum()
+                        st.metric("📊 إجمالي الكميات", f"{total_quantity:,.0f}")
+                
+                with col3:
+                    unique_types = filtered_sub['البند الفرعي'].nunique() if 'البند الفرعي' in filtered_sub.columns else 0
+                    st.metric("🔢 أنواع البنود", unique_types)
+                
+                # جدول البنود الفرعية
+                if len(filtered_sub) > 0:
+                    display_cols = []
+                    if 'البند الرئيسي' in filtered_sub.columns:
+                        display_cols.append('البند الرئيسي')
+                    if 'البند الفرعي' in filtered_sub.columns:
+                        display_cols.append('البند الفرعي')
+                    if 'الكمية' in filtered_sub.columns:
+                        display_cols.append('الكمية')
+                    
+                    if display_cols:
+                        display_df = filtered_sub[display_cols].copy()
+                        
+                        st.markdown("#### جدول البنود الفرعية")
+                        st.dataframe(
+                            display_df,
+                            use_container_width=True,
+                            hide_index=True,
+                            height=400
+                        )
+        else:
+            st.info("لا توجد بيانات للبنود الفرعية")
+    
+    with tab3:
+        st.markdown("### 💰 التكاليف التقديرية")
+        
+        if costs_df is not None and not costs_df.empty:
+            # إحصائيات التكاليف
+            col1, col2, col3, col4 = st.columns(4)
             
-            # فلترة البيانات
-            if selected_main_item != 'الكل':
-                filtered_sub = sub_items_df[sub_items_df['البند الرئيسي'] == selected_main_item]
-            else:
-                filtered_sub = sub_items_df
+            with col1:
+                avg_cost = cost_stats.get('المتوسط', 0)
+                st.metric("📊 متوسط التكلفة", f"${avg_cost:,.0f}")
             
-            # عرض الإحصائيات
+            with col2:
+                min_cost = cost_stats.get('الأدنى', 0)
+                st.metric("⬇️ أدنى تكلفة", f"${min_cost:,.0f}")
+            
+            with col3:
+                max_cost = cost_stats.get('الأعلى', 0)
+                st.metric("⬆️ أعلى تكلفة", f"${max_cost:,.0f}")
+            
+            with col4:
+                houses_count = cost_stats.get('عدد المنازل', 0)
+                st.metric("🏠 المنازل المقيّمة", houses_count)
+            
+            st.markdown("---")
+            
+            # جدول التكاليف
+            st.markdown("#### جدول تكاليف المنازل")
+            
+            # ترتيب حسب الكلفة
+            sorted_costs = costs_df.sort_values('التكلفة التقديرية (USD)', ascending=False)
+            
+            st.dataframe(
+                sorted_costs,
+                use_container_width=True,
+                hide_index=True,
+                height=400
+            )
+            
+            # مخطط التكاليف
+            st.markdown("#### 📊 توزيع التكاليف")
+            
+            fig = px.histogram(
+                costs_df,
+                x='التكلفة التقديرية (USD)',
+                nbins=20,
+                color_discrete_sequence=['#009688']
+            )
+            
+            fig.update_layout(
+                height=400,
+                xaxis_title="التكلفة التقديرية (USD)",
+                yaxis_title="عدد المنازل",
+                font=dict(family="Tajawal, sans-serif", size=14)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # تصدير التكاليف
+            st.markdown("---")
+            st.markdown("### 📥 تصدير البيانات")
+            
             col1, col2 = st.columns(2)
             
             with col1:
-                st.metric("📝 عدد البنود الفرعية", len(filtered_sub))
+                csv = sorted_costs.to_csv(index=False, encoding='utf-8-sig')
+                st.download_button(
+                    label="📥 تصدير التكاليف (CSV)",
+                    data=csv,
+                    file_name="houses_costs.csv",
+                    mime="text/csv"
+                )
             
             with col2:
-                if 'الكمية' in filtered_sub.columns:
-                    total_quantity = filtered_sub['الكمية'].sum()
-                    st.metric("📊 إجمالي الكميات", f"{total_quantity:,.0f}")
-            
-            # جدول البنود الفرعية
-            if len(filtered_sub) > 0:
+                from io import BytesIO
+                output = BytesIO()
                 
-                # اختيار الأعمدة للعرض
-                display_cols = []
-                if 'البند الرئيسي' in filtered_sub.columns:
-                    display_cols.append('البند الرئيسي')
-                if 'البند الفرعي' in filtered_sub.columns:
-                    display_cols.append('البند الفرعي')
-                if 'الكمية' in filtered_sub.columns:
-                    display_cols.append('الكمية')
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    sorted_costs.to_excel(writer, index=False, sheet_name='التكاليف')
                 
-                if display_cols:
-                    display_df = filtered_sub[display_cols].copy()
-                    
-                    st.markdown("#### جدول البنود الفرعية")
-                    st.dataframe(
-                        display_df,
-                        use_container_width=True,
-                        hide_index=True,
-                        height=400
-                    )
+                output.seek(0)
                 
-                # عرض الصور التوضيحية
-                st.markdown("---")
-                st.markdown("### 📸 الصور التوضيحية للبنود")
-                
-                # عرض البنود مع صورها
-                for idx, row in filtered_sub.iterrows():
-                    sub_item_name = row.get('البند الفرعي', 'غير محدد')
-                    quantity = row.get('الكمية', 'غير محدد')
-                    image_url = row.get('صورة توضيحية للبند_URL', '')
-                    
-                    with st.expander(f"📝 {sub_item_name} (الكمية: {quantity})"):
-                        
-                        col1, col2 = st.columns([1, 2])
-                        
-                        with col1:
-                            st.markdown(f"""
-                            **البند الرئيسي:** {row.get('البند الرئيسي', 'غير محدد')}
-                            
-                            **البند الفرعي:** {sub_item_name}
-                            
-                            **الكمية:** {quantity}
-                            """)
-                        
-                        with col2:
-                            if image_url:
-                                try:
-                                    st.image(image_url, caption=f"صورة توضيحية - {sub_item_name}", use_container_width=True)
-                                except:
-                                    st.warning("لم يتم تحميل الصورة")
-                            else:
-                                st.info("لا توجد صورة توضيحية")
-                
-                # تصدير البيانات
-                st.markdown("---")
-                st.markdown("### 📥 تصدير البيانات")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    # تصدير إلى CSV
-                    csv = display_df.to_csv(index=False, encoding='utf-8-sig')
-                    st.download_button(
-                        label="📥 تصدير إلى CSV",
-                        data=csv,
-                        file_name=f"sub_items_{selected_main_item}.csv",
-                        mime="text/csv"
-                    )
-                
-                with col2:
-                    # تصدير إلى Excel
-                    from io import BytesIO
-                    output = BytesIO()
-                    
-                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        display_df.to_excel(writer, index=False, sheet_name='البنود الفرعية')
-                    
-                    output.seek(0)
-                    
-                    st.download_button(
-                        label="📥 تصدير إلى Excel",
-                        data=output,
-                        file_name=f"sub_items_{selected_main_item}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-            
-            else:
-                st.info("لا توجد بنود فرعية لهذا البند الرئيسي")
+                st.download_button(
+                    label="📥 تصدير التكاليف (Excel)",
+                    data=output,
+                    file_name="houses_costs.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        else:
+            st.info("⚠️ بيانات التكاليف غير متوفرة. تأكد من وجود ورقة BOQs2 في ملف Excel.")
     
-    else:
-        st.info("لا توجد بيانات للبنود الفرعية")
-    
-    # تحليلات إضافية
-    st.markdown("---")
-    st.markdown("### 📊 تحليلات إضافية")
-    
-    if sub_items_df is not None and 'البند الفرعي' in sub_items_df.columns and 'الكمية' in sub_items_df.columns:
+    with tab4:
+        st.markdown("### 📊 التحليلات")
         
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # أكثر البنود الفرعية طلباً
-            st.markdown("#### أكثر البنود الفرعية طلباً")
+        if sub_items_df is not None and 'البند الفرعي' in sub_items_df.columns and 'الكمية' in sub_items_df.columns:
+            col1, col2 = st.columns(2)
             
-            top_sub_items = sub_items_df.groupby('البند الفرعي').size().reset_index(name='عدد الطلبات')
-            top_sub_items = top_sub_items.sort_values('عدد الطلبات', ascending=False).head(10)
+            with col1:
+                # أكثر البنود طلباً
+                st.markdown("#### أكثر البنود طلباً")
+                
+                top_items = sub_items_df.groupby('البند الفرعي').size().reset_index(name='عدد المنازل')
+                top_items = top_items.sort_values('عدد المنازل', ascending=False).head(10)
+                
+                fig = px.bar(
+                    top_items,
+                    x='عدد المنازل',
+                    y='البند الفرعي',
+                    text='عدد المنازل',
+                    orientation='h',
+                    color='عدد المنازل',
+                    color_continuous_scale='Purples'
+                )
+                
+                fig.update_traces(textposition='outside', textfont_size=12)
+                fig.update_layout(
+                    showlegend=False,
+                    height=500,
+                    xaxis_title="عدد المنازل",
+                    yaxis_title="",
+                    font=dict(family="Tajawal, sans-serif", size=12)
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
             
-            import plotly.express as px
-            
-            fig = px.bar(
-                top_sub_items,
-                x='عدد الطلبات',
-                y='البند الفرعي',
-                text='عدد الطلبات',
-                orientation='h',
-                color='عدد الطلبات',
-                color_continuous_scale='Greens'
-            )
-            
-            fig.update_traces(textposition='outside')
-            fig.update_layout(
-                showlegend=False,
-                height=500,
-                xaxis_title="عدد الطلبات",
-                yaxis_title="",
-                font=dict(family="Cairo, sans-serif", size=12)
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # إجمالي الكميات حسب البند الفرعي
-            st.markdown("#### إجمالي الكميات حسب البند")
-            
-            quantities = sub_items_df.groupby('البند الفرعي')['الكمية'].sum().reset_index()
-            quantities = quantities.sort_values('الكمية', ascending=False).head(10)
-            
-            fig = px.bar(
-                quantities,
-                x='الكمية',
-                y='البند الفرعي',
-                text='الكمية',
-                orientation='h',
-                color='الكمية',
-                color_continuous_scale='Oranges'
-            )
-            
-            fig.update_traces(textposition='outside')
-            fig.update_layout(
-                showlegend=False,
-                height=500,
-                xaxis_title="الكمية الإجمالية",
-                yaxis_title="",
-                font=dict(family="Cairo, sans-serif", size=12)
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                # أعلى الكميات
+                st.markdown("#### أعلى الكميات")
+                
+                quantities = sub_items_df.groupby('البند الفرعي')['الكمية'].sum().reset_index()
+                quantities = quantities.sort_values('الكمية', ascending=False).head(10)
+                
+                fig = px.bar(
+                    quantities,
+                    x='الكمية',
+                    y='البند الفرعي',
+                    text='الكمية',
+                    orientation='h',
+                    color='الكمية',
+                    color_continuous_scale='Oranges'
+                )
+                
+                fig.update_traces(textposition='outside', textfont_size=12)
+                fig.update_layout(
+                    showlegend=False,
+                    height=500,
+                    xaxis_title="الكمية الإجمالية",
+                    yaxis_title="",
+                    font=dict(family="Tajawal, sans-serif", size=12)
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
 
 else:
     st.error("⚠️ لا توجد بيانات للبنود الرئيسية")
@@ -302,12 +369,14 @@ else:
 with st.sidebar:
     st.markdown("### 🔧 البنود والأعمال")
     st.markdown("""
-        هذه الصفحة تعرض تفاصيل أعمال إعادة التأهيل.
+        هذه الصفحة تعرض تفاصيل أعمال إعادة التأهيل مع التكاليف.
         
-        **الميزات:**
-        - 🔧 البنود الرئيسية
+        **الأقسام:**
+        - 📋 البنود الرئيسية
         - 📝 البنود الفرعية
-        - 📸 الصور التوضيحية
-        - 📊 التحليلات والإحصائيات
-        - 📥 تصدير البيانات
+        -💰 التكاليف التقديرية
+        - 📊 التحليلات
+        
+        **المطابقة:**
+        يتم مطابقة البنود تلقائياً مع جدول BOQs لحساب التكاليف.
     """)
