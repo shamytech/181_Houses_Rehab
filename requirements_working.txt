@@ -1,0 +1,26 @@
+# UNDP Dashboard - متطلبات المشروع
+
+# إطار العمل الأساسي
+streamlit==1.31.0
+
+# قوائم تنقل وواجهة محسنة
+streamlit-option-menu==0.3.12
+streamlit-extras==0.3.6
+
+# معالجة البيانات
+pandas==2.2.2
+openpyxl==3.1.2
+numpy==1.26.4
+
+# المخططات التفاعلية
+plotly==5.18.0
+
+# الخرائط التفاعلية
+folium==0.15.1
+streamlit-folium==0.16.0
+
+# معالجة الصور
+Pillow==10.2.0
+
+# التصدير
+xlsxwriter==3.1.9
