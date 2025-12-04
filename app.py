@@ -21,6 +21,7 @@ from utils.data_loader import (
     get_demographic_stats
 )
 from utils.boqs import load_boqs_data, calculate_total_cost, get_cost_by_category
+from utils.data_loader import load_sub_items
 from utils.charts import create_damage_pie_chart, create_house_type_pie_chart
 
 # إعدادات الصفحة
@@ -48,14 +49,15 @@ def load_all_data():
     file_path = Path(DATA_PATH)
     if not file_path.exists():
         st.error(f"⚠️ لم يتم العثور على ملف البيانات: {DATA_PATH}")
-        return None, None
+        return None, None, None
     
     houses_df = load_houses_data(str(file_path))
     boqs_df = load_boqs_data(str(file_path))
+    sub_items_df = load_sub_items(str(file_path))
     
-    return houses_df, boqs_df
+    return houses_df, boqs_df, sub_items_df
 
-df, boqs_df = load_all_data()
+df, boqs_df, sub_items_df = load_all_data()
 
 if df is not None and not df.empty:
     
@@ -149,7 +151,7 @@ if df is not None and not df.empty:
     
     with col4:
         # التكلفة الإجمالية من BOQs
-        if boqs_df is not None and not boqs_df.empty:
+        if boqs_df is not None and not boqs_df.empty and sub_items_df is not None and not sub_items_df.empty:
             total_cost = calculate_total_cost(sub_items_df, boqs_df)
             st.markdown(f"""
             <div style='background: linear-gradient(135deg, #26A69A 0%, #009688 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
@@ -278,7 +280,10 @@ if df is not None and not df.empty:
             st.markdown("### توزيع التكاليف")
             
             # التكلفة حسب الفئة
-            cost_by_category = get_cost_by_category(sub_items_df, boqs_df)
+            if sub_items_df is not None and not sub_items_df.empty:
+                cost_by_category = get_cost_by_category(sub_items_df, boqs_df)
+            else:
+                cost_by_category = {}
             
             if cost_by_category:
                 cost_df = pd.DataFrame(
