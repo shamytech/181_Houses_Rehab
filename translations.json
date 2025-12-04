@@ -1,0 +1,168 @@
+{
+  "ar": {
+    "font_family": "Tajawal",
+    "app_title": "لوحة تحكم إعادة تأهيل المنازل",
+    "app_subtitle": "برنامج الأمم المتحدة الإنمائي (UNDP) - ريف دمشق",
+    "nav": {
+      "dashboard": "لوحة المعلومات",
+      "beneficiaries": "المستفيدون",
+      "map": "الخريطة",
+      "statistics": "الإحصائيات",
+      "work_items": "البنود والأعمال"
+    },
+    "metrics": {
+      "total_applications": "إجمالي الطلبات",
+      "light_damage": "ضرر خفيف",
+      "medium_damage": "ضرر متوسط",
+      "severe_damage": "ضرر شديد",
+      "total_families": "إجمالي الأسر",
+      "total_individuals": "إجمالي الأفراد",
+      "disabled_persons": "ذوي الإعاقة",
+      "estimated_cost": "التكلفة التقديرية",
+      "elderly": "كبار السن"
+    },
+    "sections": {
+      "key_indicators": "المؤشرات الرئيسية",
+      "damage_distribution": "توزيع حالة الضرر",
+      "house_types": "أنواع المنازل",
+      "demographics": "الديموغرافيا",
+      "geographic_distribution": "التوزيع الجغرافي",
+      "costs": "التكاليف"
+    },
+    "beneficiaries": {
+      "title": "قائمة المستفيدين",
+      "search": "بحث (الاسم، الرقم الوطني، العنوان)",
+      "filter_governorate": "المحافظة",
+      "filter_damage": "حالة الضرر",
+      "filter_house_type": "نوع المنزل",
+      "all": "الكل",
+      "results": "النتائج",
+      "beneficiary": "مستفيد",
+      "export_csv": "تصدير CSV",
+      "export_excel": "تصدير Excel"
+    },
+    "modal": {
+      "personal_info": "المعلومات الشخصية",
+      "address_info": "معلومات العنوان",
+      "assessment": "التقييم",
+      "photos": "صور المنزل",
+      "work_items": "البنود والكميات",
+      "close": "إغلاق"
+    },
+    "fields": {
+      "full_name": "الاسم الكامل",
+      "gender": "الجنس",
+      "birth_date": "تاريخ الميلاد",
+      "marital_status": "الحالة الاجتماعية",
+      "id_type": "نوع الوثيقة",
+      "id_number": "رقم الوثيقة",
+      "phone": "الهاتف",
+      "governorate": "المحافظة",
+      "district": "المنطقة",
+      "subdistrict": "الناحية",
+      "village": "القرية",
+      "address": "العنوان",
+      "house_type": "نوع المنزل",
+      "rooms": "عدد الغرف",
+      "area": "المساحة",
+      "floor": "الطابق",
+      "damage_status": "حالة الضرر",
+      "family_size": "عدد أفراد الأسرة",
+      "estimated_cost": "التكلفة التقديرية"
+    },
+    "buttons": {
+      "view_details": "عرض التفاصيل",
+      "download": "تحميل",
+      "change_language": "English"
+    },
+    "messages": {
+      "loading": "جاري التحميل...",
+      "no_data": "لا توجد بيانات",
+      "error": "حدث خطأ",
+      "success": "تمت العملية بنجاح"
+    }
+  },
+  "en": {
+    "font_family": "Inter",
+    "app_title": "Housing Rehabilitation Dashboard",
+    "app_subtitle": "United Nations Development Programme (UNDP) - Rural Damascus",
+    "nav": {
+      "dashboard": "Dashboard",
+      "beneficiaries": "Beneficiaries",
+      "map": "Map",
+      "statistics": "Statistics",
+      "work_items": "Work Items"
+    },
+    "metrics": {
+      "total_applications": "Total Applications",
+      "light_damage": "Light Damage",
+      "medium_damage": "Medium Damage",
+      "severe_damage": "Severe Damage",
+      "total_families": "Total Families",
+      "total_individuals": "Total Individuals",
+      "disabled_persons": "Persons with Disabilities",
+      "estimated_cost": "Estimated Cost",
+      "elderly": "Elderly"
+    },
+    "sections": {
+      "key_indicators": "Key Indicators",
+      "damage_distribution": "Damage Distribution",
+      "house_types": "House Types",
+      "demographics": "Demographics",
+      "geographic_distribution": "Geographic Distribution",
+      "costs": "Costs"
+    },
+    "beneficiaries": {
+      "title": "Beneficiaries List",
+      "search": "Search (Name, ID Number, Address)",
+      "filter_governorate": "Governorate",
+      "filter_damage": "Damage Status",
+      "filter_house_type": "House Type",
+      "all": "All",
+      "results": "Results",
+      "beneficiary": "beneficiary",
+      "export_csv": "Export CSV",
+      "export_excel": "Export Excel"
+    },
+    "modal": {
+      "personal_info": "Personal Information",
+      "address_info": "Address Information",
+      "assessment": "Assessment",
+      "photos": "House Photos",
+      "work_items": "Work Items & Quantities",
+      "close": "Close"
+    },
+    "fields": {
+      "full_name": "Full Name",
+      "gender": "Gender",
+      "birth_date": "Birth Date",
+      "marital_status": "Marital Status",
+      "id_type": "ID Type",
+      "id_number": "ID Number",
+      "phone": "Phone",
+      "governorate": "Governorate",
+      "district": "District",
+      "subdistrict": "Subdistrict",
+      "village": "Village",
+      "address": "Address",
+      "house_type": "House Type",
+      "rooms": "Number of Rooms",
+      "area": "Area",
+      "floor": "Floor",
+      "damage_status": "Damage Status",
+      "family_size": "Family Size",
+      "estimated_cost": "Estimated Cost"
+    },
+    "buttons": {
+      "view_details": "View Details",
+      "download": "Download",
+      "change_language": "العربية"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "no_data": "No data available",
+      "error": "An error occurred",
+      "success": "Operation completed successfully"
+    }
+  }
+}
