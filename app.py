@@ -150,7 +150,7 @@ if df is not None and not df.empty:
     with col4:
         # التكلفة الإجمالية من BOQs
         if boqs_df is not None and not boqs_df.empty:
-            total_cost = calculate_total_cost(boqs_df)
+            total_cost = calculate_total_cost(sub_items_df, boqs_df)
             st.markdown(f"""
             <div style='background: linear-gradient(135deg, #26A69A 0%, #009688 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
                 <div style='font-size: 3em; margin-bottom: 10px;'>💰</div>
@@ -278,7 +278,7 @@ if df is not None and not df.empty:
             st.markdown("### توزيع التكاليف")
             
             # التكلفة حسب الفئة
-            cost_by_category = get_cost_by_category(boqs_df)
+            cost_by_category = get_cost_by_category(sub_items_df, boqs_df)
             
             if cost_by_category:
                 cost_df = pd.DataFrame(
