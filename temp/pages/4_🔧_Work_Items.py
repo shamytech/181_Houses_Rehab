@@ -13,7 +13,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import *
 from utils.data_loader import load_main_items, load_sub_items
 from utils.boqs import (
+    load_boqs_with_mapping,
     calculate_all_houses_costs,
+    calculate_house_cost,
     get_cost_statistics
 )
 from utils.i18n import tm, create_language_switcher, get_dynamic_css
@@ -26,7 +28,7 @@ st.set_page_config(**PAGE_CONFIG)
 st.markdown(get_dynamic_css(tm), unsafe_allow_html=True)
 
 # الهيدر الموحد
-create_header(page_title=f"🔧 {tm.t('work_items.title')}")
+create_header(page_title="🔧 البنود والأعمال")
 
 # الشريط الجانبي
 with st.sidebar:
@@ -34,46 +36,47 @@ with st.sidebar:
     st.markdown("---")
     create_language_switcher(tm)
     st.markdown("---")
+    st.markdown("### 🔧 البنود والأعمال")
+    st.markdown("""
+        هذه الصفحة تعرض تفاصيل أعمال إعادة التأهيل مع التكاليف.
+        
+        **الأقسام:**
+        - 📋 البنود الرئيسية
+        - 📝 البنود الفرعية
+        - 💰 التكاليف التقديرية
+        - 📊 التحليلات
+        
+        **المطابقة:**
+        يتم مطابقة البنود تلقائياً مع جدول BOQs لحساب التكاليف.
+    """)
 
 # تحميل البيانات
 @st.cache_data
 def load_data():
     file_path = Path(__file__).parent.parent / DATA_PATH
     if not file_path.exists():
-        return None, None
+        return None, None, None
     
     main_items = load_main_items(str(file_path))
     sub_items = load_sub_items(str(file_path))
+    boqs = load_boqs_with_mapping(str(file_path))
     
-    return main_items, sub_items
+    return main_items, sub_items, boqs
 
-main_items_df, sub_items_df = load_data()
-
-# تحديد أسماء الحقول حسب اللغة
-is_english = tm.get_current_language() == 'en'
-main_item_col = 'البند الرئيسي EN' if is_english else 'البند الرئيسي'
-sub_item_col = 'البند الفرعي EN' if is_english else 'البند الفرعي'
-
-# التحقق من وجود الأعمدة الإنجليزية، وإلا استخدام العربية
-if main_items_df is not None:
-    if main_item_col not in main_items_df.columns:
-        main_item_col = 'البند الرئيسي'
-if sub_items_df is not None:
-    if sub_item_col not in sub_items_df.columns:
-        sub_item_col = 'البند الفرعي'
+main_items_df, sub_items_df, boqs_df = load_data()
 
 if main_items_df is not None and not main_items_df.empty:
     
-    # حساب تكاليف جميع المنازل من البنود الفرعية مباشرة
-    if sub_items_df is not None and not sub_items_df.empty:
-        costs_df = calculate_all_houses_costs(sub_items_df)
+    # حساب تكاليف جميع المنازل
+    if sub_items_df is not None and boqs_df is not None and not boqs_df.empty:
+        costs_df = calculate_all_houses_costs(sub_items_df, boqs_df)
         cost_stats = get_cost_statistics(costs_df)
     else:
         costs_df = None
         cost_stats = {}
     
     # ملخص البنود والتكاليف
-    st.markdown(f"## 📊 {tm.t('sections.project_summary')}")
+    st.markdown("## 📊 ملخص المشروع")
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -83,7 +86,7 @@ if main_items_df is not None and not main_items_df.empty:
         <div style='background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
             <div style='font-size: 3em; margin-bottom: 10px;'>🔧</div>
             <div style='font-size: 2.5em; font-weight: bold;'>{total_main}</div>
-            <div style='font-size: 1.1em; opacity: 0.9;'>{tm.t('metrics.main_items')}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>البنود الرئيسية</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -97,7 +100,7 @@ if main_items_df is not None and not main_items_df.empty:
         <div style='background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
             <div style='font-size: 3em; margin-bottom: 10px;'>📝</div>
             <div style='font-size: 2.5em; font-weight: bold;'>{total_sub}</div>
-            <div style='font-size: 1.1em; opacity: 0.9;'>{tm.t('metrics.sub_items')}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>البنود الفرعية</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -107,7 +110,7 @@ if main_items_df is not None and not main_items_df.empty:
         <div style='background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
             <div style='font-size: 3em; margin-bottom: 10px;'>🏠</div>
             <div style='font-size: 2.5em; font-weight: bold;'>{unique_houses}</div>
-            <div style='font-size: 1.1em; opacity: 0.9;'>{tm.t('metrics.houses_count')}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>المنازل</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -117,30 +120,25 @@ if main_items_df is not None and not main_items_df.empty:
         <div style='background: linear-gradient(135deg, #26A69A 0%, #009688 100%); padding: 25px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
             <div style='font-size: 3em; margin-bottom: 10px;'>💰</div>
             <div style='font-size: 2.5em; font-weight: bold;'>${total_cost:,.0f}</div>
-            <div style='font-size: 1.1em; opacity: 0.9;'>{tm.t('modal.total_cost')}</div>
+            <div style='font-size: 1.1em; opacity: 0.9;'>التكلفة الإجمالية</div>
         </div>
         """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     # التبويبات
-    tab1, tab2, tab3, tab4 = st.tabs([
-        tm.t('tabs.main_items'),
-        tm.t('tabs.sub_items'),
-        tm.t('tabs.costs'),
-        tm.t('tabs.analysis')
-    ])
+    tab1, tab2, tab3, tab4 = st.tabs(["📋 البنود الرئيسية", "📝 البنود الفرعية", "💰 التكاليف", "📊 التحليلات"])
     
     with tab1:
-        st.markdown(f"### 🔧 {tm.t('work_items.main_items')}")
+        st.markdown("### 🔧 البنود الرئيسية")
         
         # تجميع البنود الرئيسية
-        if main_item_col in main_items_df.columns:
-            main_summary = main_items_df.groupby(main_item_col).agg({
+        if 'البند الرئيسي' in main_items_df.columns:
+            main_summary = main_items_df.groupby('البند الرئيسي').agg({
                 '_parent_index': 'count'
             }).reset_index()
-            main_summary.columns = [tm.t('modal.main_item'), tm.t('metrics.houses_count')]
-            main_summary = main_summary.sort_values(tm.t('metrics.houses_count'), ascending=False)
+            main_summary.columns = ['البند الرئيسي', 'عدد المنازل']
+            main_summary = main_summary.sort_values('عدد المنازل', ascending=False)
             
             # عرض الجدول
             st.dataframe(
@@ -151,15 +149,15 @@ if main_items_df is not None and not main_items_df.empty:
             )
             
             # مخطط البنود الرئيسية
-            st.markdown(f"#### 📊 {tm.t('work_items.main_items_distribution')}")
+            st.markdown("#### 📊 توزيع البنود الرئيسية")
             
             fig = px.bar(
                 main_summary,
-                y=tm.t('modal.main_item'),
-                x=tm.t('metrics.houses_count'),
-                text=tm.t('metrics.houses_count'),
+                y='البند الرئيسي',
+                x='عدد المنازل',
+                text='عدد المنازل',
                 orientation='h',
-                color=tm.t('metrics.houses_count'),
+                color='عدد المنازل',
                 color_continuous_scale='Teal'
             )
             
@@ -167,7 +165,7 @@ if main_items_df is not None and not main_items_df.empty:
             fig.update_layout(
                 showlegend=False,
                 height=500,
-                xaxis_title=tm.t('metrics.houses_count'),
+                xaxis_title="عدد المنازل",
                 yaxis_title="",
                 font=dict(family="Tajawal, sans-serif", size=14)
             )
@@ -175,18 +173,17 @@ if main_items_df is not None and not main_items_df.empty:
             st.plotly_chart(fig, use_container_width=True)
     
     with tab2:
-        st.markdown(f"### 📝 {tm.t('work_items.sub_items')}")
+        st.markdown("### 📝 البنود الفرعية")
         
         if sub_items_df is not None and not sub_items_df.empty:
             # فلترة حسب البند الرئيسي
-            if main_item_col in sub_items_df.columns:
-                main_items_list = [tm.t('beneficiaries.all')] + sorted(sub_items_df[main_item_col].dropna().unique().tolist())
-                selected_main_item = st.selectbox(f"🔍 {tm.t('work_items.select_main_item')}", main_items_list, key="main_filter")
+            if 'البند الرئيسي' in sub_items_df.columns:
+                main_items_list = ['الكل'] + sorted(sub_items_df['البند الرئيسي'].dropna().unique().tolist())
+                selected_main_item = st.selectbox("🔍 اختر البند الرئيسي", main_items_list, key="main_filter")
                 
                 # فلترة البيانات
-                all_text = tm.t('beneficiaries.all')
-                if selected_main_item != all_text:
-                    filtered_sub = sub_items_df[sub_items_df[main_item_col] == selected_main_item]
+                if selected_main_item != 'الكل':
+                    filtered_sub = sub_items_df[sub_items_df['البند الرئيسي'] == selected_main_item]
                 else:
                     filtered_sub = sub_items_df
                 
@@ -194,40 +191,31 @@ if main_items_df is not None and not main_items_df.empty:
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.metric(f"📝 {tm.t('work_items.items_count')}", len(filtered_sub))
+                    st.metric("📝 عدد البنود", len(filtered_sub))
                 
                 with col2:
                     if 'الكمية' in filtered_sub.columns:
                         total_quantity = filtered_sub['الكمية'].sum()
-                        st.metric(f"📊 {tm.t('work_items.total_quantities')}", f"{total_quantity:,.0f}")
+                        st.metric("📊 إجمالي الكميات", f"{total_quantity:,.0f}")
                 
                 with col3:
-                    unique_types = filtered_sub[sub_item_col].nunique() if sub_item_col in filtered_sub.columns else 0
-                    st.metric(f"🔢 {tm.t('work_items.item_types')}", unique_types)
+                    unique_types = filtered_sub['البند الفرعي'].nunique() if 'البند الفرعي' in filtered_sub.columns else 0
+                    st.metric("🔢 أنواع البنود", unique_types)
                 
                 # جدول البنود الفرعية
                 if len(filtered_sub) > 0:
                     display_cols = []
-                    if main_item_col in filtered_sub.columns:
-                        display_cols.append(main_item_col)
-                    if sub_item_col in filtered_sub.columns:
-                        display_cols.append(sub_item_col)
+                    if 'البند الرئيسي' in filtered_sub.columns:
+                        display_cols.append('البند الرئيسي')
+                    if 'البند الفرعي' in filtered_sub.columns:
+                        display_cols.append('البند الفرعي')
                     if 'الكمية' in filtered_sub.columns:
                         display_cols.append('الكمية')
                     
                     if display_cols:
                         display_df = filtered_sub[display_cols].copy()
-                        # إعادة تسمية الأعمدة للعرض
-                        rename_cols = {}
-                        if main_item_col in display_df.columns:
-                            rename_cols[main_item_col] = tm.t('modal.main_item')
-                        if sub_item_col in display_df.columns:
-                            rename_cols[sub_item_col] = tm.t('modal.sub_item')
-                        if 'الكمية' in display_df.columns:
-                            rename_cols['الكمية'] = tm.t('modal.quantity')
-                        display_df = display_df.rename(columns=rename_cols)
                         
-                        st.markdown(f"#### {tm.t('work_items.sub_items_table')}")
+                        st.markdown("#### جدول البنود الفرعية")
                         st.dataframe(
                             display_df,
                             use_container_width=True,
@@ -235,10 +223,10 @@ if main_items_df is not None and not main_items_df.empty:
                             height=400
                         )
         else:
-            st.info(tm.t('messages.no_sub_items'))
+            st.info("لا توجد بيانات للبنود الفرعية")
     
     with tab3:
-        st.markdown(f"### 💰 {tm.t('work_items.costs')}")
+        st.markdown("### 💰 التكاليف التقديرية")
         
         if costs_df is not None and not costs_df.empty:
             # إحصائيات التكاليف
@@ -246,24 +234,24 @@ if main_items_df is not None and not main_items_df.empty:
             
             with col1:
                 avg_cost = cost_stats.get('المتوسط', 0)
-                st.metric(f"📊 {tm.t('metrics.average_cost')}", f"${avg_cost:,.0f}")
+                st.metric("📊 متوسط التكلفة", f"${avg_cost:,.0f}")
             
             with col2:
                 min_cost = cost_stats.get('الأدنى', 0)
-                st.metric(f"⬇️ {tm.t('metrics.min_cost')}", f"${min_cost:,.0f}")
+                st.metric("⬇️ أدنى تكلفة", f"${min_cost:,.0f}")
             
             with col3:
                 max_cost = cost_stats.get('الأعلى', 0)
-                st.metric(f"⬆️ {tm.t('metrics.max_cost')}", f"${max_cost:,.0f}")
+                st.metric("⬆️ أعلى تكلفة", f"${max_cost:,.0f}")
             
             with col4:
                 houses_count = cost_stats.get('عدد المنازل', 0)
-                st.metric(f"🏠 {tm.t('metrics.houses_count')}", houses_count)
+                st.metric("🏠 المنازل المقيّمة", houses_count)
             
             st.markdown("---")
             
             # جدول التكاليف
-            st.markdown(f"#### {tm.t('work_items.houses_costs_table')}")
+            st.markdown("#### جدول تكاليف المنازل")
             
             # ترتيب حسب الكلفة
             sorted_costs = costs_df.sort_values('التكلفة التقديرية (USD)', ascending=False)
@@ -276,7 +264,7 @@ if main_items_df is not None and not main_items_df.empty:
             )
             
             # مخطط التكاليف
-            st.markdown(f"#### 📊 {tm.t('work_items.costs_distribution')}")
+            st.markdown("#### 📊 توزيع التكاليف")
             
             fig = px.histogram(
                 costs_df,
@@ -287,8 +275,8 @@ if main_items_df is not None and not main_items_df.empty:
             
             fig.update_layout(
                 height=400,
-                xaxis_title=tm.t('metrics.estimated_cost') + " (USD)",
-                yaxis_title=tm.t('metrics.houses_count'),
+                xaxis_title="التكلفة التقديرية (USD)",
+                yaxis_title="عدد المنازل",
                 font=dict(family="Tajawal, sans-serif", size=14)
             )
             
@@ -296,14 +284,14 @@ if main_items_df is not None and not main_items_df.empty:
             
             # تصدير التكاليف
             st.markdown("---")
-            st.markdown(f"### 📥 {tm.t('work_items.export_data')}")
+            st.markdown("### 📥 تصدير البيانات")
             
             col1, col2 = st.columns(2)
             
             with col1:
                 csv = sorted_costs.to_csv(index=False, encoding='utf-8-sig')
                 st.download_button(
-                    label=f"📥 {tm.t('buttons.export_costs_csv')}",
+                    label="📥 تصدير التكاليف (CSV)",
                     data=csv,
                     file_name="houses_costs.csv",
                     mime="text/csv"
@@ -314,39 +302,39 @@ if main_items_df is not None and not main_items_df.empty:
                 output = BytesIO()
                 
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    sorted_costs.to_excel(writer, index=False, sheet_name='Costs')
+                    sorted_costs.to_excel(writer, index=False, sheet_name='التكاليف')
                 
                 output.seek(0)
                 
                 st.download_button(
-                    label=f"📥 {tm.t('buttons.export_costs_excel')}",
+                    label="📥 تصدير التكاليف (Excel)",
                     data=output,
                     file_name="houses_costs.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
         else:
-            st.info(f"⚠️ {tm.t('messages.costs_not_available')}")
+            st.info("⚠️ بيانات التكاليف غير متوفرة. تأكد من وجود ورقة BOQs2 في ملف Excel.")
     
     with tab4:
-        st.markdown(f"### 📊 {tm.t('work_items.analysis')}")
+        st.markdown("### 📊 التحليلات")
         
-        if sub_items_df is not None and sub_item_col in sub_items_df.columns and 'الكمية' in sub_items_df.columns:
+        if sub_items_df is not None and 'البند الفرعي' in sub_items_df.columns and 'الكمية' in sub_items_df.columns:
             col1, col2 = st.columns(2)
             
             with col1:
                 # أكثر البنود طلباً
-                st.markdown(f"#### {tm.t('sections.most_requested_items')}")
+                st.markdown("#### أكثر البنود طلباً")
                 
-                top_items = sub_items_df.groupby(sub_item_col).size().reset_index(name=tm.t('metrics.houses_count'))
-                top_items = top_items.sort_values(tm.t('metrics.houses_count'), ascending=False).head(10)
+                top_items = sub_items_df.groupby('البند الفرعي').size().reset_index(name='عدد المنازل')
+                top_items = top_items.sort_values('عدد المنازل', ascending=False).head(10)
                 
                 fig = px.bar(
                     top_items,
-                    x=tm.t('metrics.houses_count'),
-                    y=sub_item_col,
-                    text=tm.t('metrics.houses_count'),
+                    x='عدد المنازل',
+                    y='البند الفرعي',
+                    text='عدد المنازل',
                     orientation='h',
-                    color=tm.t('metrics.houses_count'),
+                    color='عدد المنازل',
                     color_continuous_scale='Purples'
                 )
                 
@@ -354,7 +342,7 @@ if main_items_df is not None and not main_items_df.empty:
                 fig.update_layout(
                     showlegend=False,
                     height=500,
-                    xaxis_title=tm.t('metrics.houses_count'),
+                    xaxis_title="عدد المنازل",
                     yaxis_title="",
                     font=dict(family="Tajawal, sans-serif", size=12)
                 )
@@ -363,19 +351,18 @@ if main_items_df is not None and not main_items_df.empty:
             
             with col2:
                 # أعلى الكميات
-                st.markdown(f"#### {tm.t('sections.highest_quantities')}")
+                st.markdown("#### أعلى الكميات")
                 
-                quantities = sub_items_df.groupby(sub_item_col)['الكمية'].sum().reset_index()
-                quantities.columns = [sub_item_col, tm.t('modal.quantity')]
-                quantities = quantities.sort_values(tm.t('modal.quantity'), ascending=False).head(10)
+                quantities = sub_items_df.groupby('البند الفرعي')['الكمية'].sum().reset_index()
+                quantities = quantities.sort_values('الكمية', ascending=False).head(10)
                 
                 fig = px.bar(
                     quantities,
-                    x=tm.t('modal.quantity'),
-                    y=sub_item_col,
-                    text=tm.t('modal.quantity'),
+                    x='الكمية',
+                    y='البند الفرعي',
+                    text='الكمية',
                     orientation='h',
-                    color=tm.t('modal.quantity'),
+                    color='الكمية',
                     color_continuous_scale='Oranges'
                 )
                 
@@ -383,7 +370,7 @@ if main_items_df is not None and not main_items_df.empty:
                 fig.update_layout(
                     showlegend=False,
                     height=500,
-                    xaxis_title=tm.t('work_items.total_quantities'),
+                    xaxis_title="الكمية الإجمالية",
                     yaxis_title="",
                     font=dict(family="Tajawal, sans-serif", size=12)
                 )
@@ -391,4 +378,4 @@ if main_items_df is not None and not main_items_df.empty:
                 st.plotly_chart(fig, use_container_width=True)
 
 else:
-    st.error(f"⚠️ {tm.t('messages.no_main_items')}")
+    st.error("⚠️ لا توجد بيانات للبنود الرئيسية")

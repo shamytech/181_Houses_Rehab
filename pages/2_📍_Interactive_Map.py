@@ -13,25 +13,31 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import *
 from utils.data_loader import load_houses_data, filter_houses
 from utils.maps import create_houses_map, add_map_legend
+from utils.i18n import tm, create_language_switcher, get_dynamic_css
+from utils.header import create_header
 
 # إعدادات الصفحة
 st.set_page_config(**PAGE_CONFIG)
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# العنوان
-st.markdown("""
-    <h1 style='text-align: center; color: #0D47A1;'>
-        📍 الخريطة التفاعلية
-    </h1>
-    <hr style='margin: 20px 0;'>
-""", unsafe_allow_html=True)
+# CSS ديناميكي حسب اللغة
+st.markdown(get_dynamic_css(tm), unsafe_allow_html=True)
+
+# الهيدر الموحد
+create_header(page_title=f"📍 {tm.t('map.title')}")
+
+# الشريط الجانبي
+with st.sidebar:
+    st.image("https://www.undp.org/themes/custom/undp/logo.svg", width=180)
+    st.markdown("---")
+    create_language_switcher(tm)
+    st.markdown("---")
 
 # تحميل البيانات
 @st.cache_data
 def load_data():
     file_path = Path(__file__).parent.parent / DATA_PATH
     if not file_path.exists():
-        st.error(f"⚠️ لم يتم العثور على ملف البيانات")
+        st.error(f"⚠️ {tm.t('messages.no_data')}")
         return None
     return load_houses_data(str(file_path))
 
@@ -40,31 +46,32 @@ df = load_data()
 if df is not None and not df.empty:
     
     # أدوات الفلترة
-    st.markdown("### 🔍 فلترة النقاط")
+    st.markdown(f"### 🔍 {tm.t('map.filter_points')}")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         # فلترة حسب المحافظة
-        governorates = ['الكل'] + sorted(df['المحافظة'].dropna().unique().tolist())
-        selected_gov = st.selectbox("📍 المحافظة", governorates)
+        governorates = [tm.t('beneficiaries.all')] + sorted(df['المحافظة'].dropna().unique().tolist())
+        selected_gov = st.selectbox(f"📍 {tm.t('beneficiaries.filter_governorate')}", governorates)
     
     with col2:
-        # فلتRة حسب حالة الضرر
-        damage_statuses = ['الكل'] + sorted(df['حالة الضرر'].dropna().unique().tolist())
-        selected_damage = st.selectbox("⚠️ حالة الضرر", damage_statuses)
+        # فلترة حسب حالة الضرر
+        damage_statuses = [tm.t('beneficiaries.all')] + sorted(df['حالة الضرر'].dropna().unique().tolist())
+        selected_damage = st.selectbox(f"⚠️ {tm.t('beneficiaries.filter_damage')}", damage_statuses)
     
     with col3:
         # فلترة حسب نوع المنزل
-        house_types = ['الكل'] + sorted(df['نوع المنزل'].dropna().unique().tolist())
-        selected_type = st.selectbox("🏘️ نوع المنزل", house_types)
+        house_types = [tm.t('beneficiaries.all')] + sorted(df['نوع المنزل'].dropna().unique().tolist())
+        selected_type = st.selectbox(f"🏘️ {tm.t('beneficiaries.filter_house_type')}", house_types)
     
     # تطبيق الفلاتر
+    all_text = tm.t('beneficiaries.all')
     filtered_df = filter_houses(
         df,
-        governorate=selected_gov if selected_gov != 'الكل' else None,
-        damage_status=selected_damage if selected_damage != 'الكل' else None,
-        house_type=selected_type if selected_type != 'الكل' else None
+        governorate=selected_gov if selected_gov != all_text else None,
+        damage_status=selected_damage if selected_damage != all_text else None,
+        house_type=selected_type if selected_type != all_text else None
     )
     
     # فلترة المنازل التي لديها إحداثيات
@@ -74,20 +81,20 @@ if df is not None and not df.empty:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("📋 إجمالي المنازل", len(filtered_df))
+        st.metric(f"📋 {tm.t('map.total_houses')}", len(filtered_df))
     
     with col2:
-        st.metric("📍 منازل على الخريطة", len(map_df))
+        st.metric(f"📍 {tm.t('map.houses_on_map')}", len(map_df))
     
     with col3:
         missing = len(filtered_df) - len(map_df)
-        st.metric("⚠️ بدون إحداثيات", missing)
+        st.metric(f"⚠️ {tm.t('map.without_coordinates')}", missing)
     
     st.markdown("---")
     
     # عرض الخريطة
     if len(map_df) > 0:
-        st.markdown("### 🗺️ الخريطة")
+        st.markdown(f"### 🗺️ {tm.t('nav.map')}")
         
         # إنشاء الخريطة
         houses_map = create_houses_map(map_df)
@@ -98,36 +105,22 @@ if df is not None and not df.empty:
         
         # معلومات إضافية
         st.markdown("---")
-        st.markdown("### ℹ️ معلومات الخريطة")
+        st.markdown(f"### ℹ️ {tm.t('map.map_info')}")
         
-        st.info("""
-            **كيفية استخدام الخريطة:**
-            - انقر على أي نقطة لعرض معلومات المنزل
-            - استخدم عجلة الماوس للتقريب والتبعيد
-            - اسحب الخريطة للتنقل بين المناطق
+        st.info(f"""
+            **{tm.t('map.how_to_use')}:**
+            - {tm.t('map.click_info')}
+            - {tm.t('map.zoom_info')}
+            - {tm.t('map.drag_info')}
             
-            **الألوان:**
-            - 🟢 الأخضر: ضرر خفيف
-            - 🟡 الأصفر: ضرر متوسط
-            - 🔴 الأحمر: ضرر شديد
+            **{tm.t('map.colors')}:**
+            - 🟢 {tm.t('map.green_light')}
+            - 🟡 {tm.t('map.yellow_medium')}
+            - 🔴 {tm.t('map.red_severe')}
         """)
     
     else:
-        st.warning("⚠️ لا توجد منازل بإحداثيات جغرافية متاحة حسب الفلاتر المحددة")
+        st.warning(f"⚠️ {tm.t('messages.no_coordinates')}")
 
 else:
-    st.error("⚠️ لا توجد بيانات لعرضها")
-
-# الشريط الجانبي
-with st.sidebar:
-    st.markdown("### 📍 الخريطة التفاعلية")
-    st.markdown("""
-        هذه الصفحة تعرض جميع المنازل على خريطة تفاعلية.
-        
-        **الميزات:**
-        - 🗺️ عرض جميع المواقع
-        - 🎨 تلوين حسب حالة الضرر
-        - 💬 نوافذ منبثقة بالمعلومات
-        - 🔍 فلترة المواقع
-        - 🖼️ عرض الصور
-    """)
+    st.error(f"⚠️ {tm.t('messages.no_data')}")
