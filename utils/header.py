@@ -60,7 +60,7 @@ def create_header(page_title: str = None):
             body {{
                 margin: 0;
                 padding: 0;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family:'Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }}
             .custom-header {{
                 background: white;
@@ -94,12 +94,12 @@ def create_header(page_title: str = None):
                 height: 55px;
             }}
             .project-code {{
-                font-size: 15px;
+                font-size: 16px;
                 color: #666;
                 margin: 2px 0 0 0;
             }}
             .project-title {{
-                font-size: 12px;
+                font-size: 20px;
                 font-weight: bold;
                 margin: 0;
                 line-height: 1.3;

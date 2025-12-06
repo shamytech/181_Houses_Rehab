@@ -13,7 +13,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import *
 from utils.data_loader import load_houses_data, filter_houses
 from utils.maps import create_houses_map, add_map_legend
-from utils.i18n import tm, create_language_switcher, get_dynamic_css
+from utils.i18n import tm
+from utils.styles import get_dynamic_css
+from utils.sidebar import get_sidebar_css, create_language_switcher
 from utils.header import create_header
 
 # إعدادات الصفحة
@@ -21,6 +23,7 @@ st.set_page_config(**PAGE_CONFIG)
 
 # CSS ديناميكي حسب اللغة
 st.markdown(get_dynamic_css(tm), unsafe_allow_html=True)
+st.markdown(get_sidebar_css(tm), unsafe_allow_html=True)
 
 # الهيدر الموحد
 create_header(page_title=f"📍 {tm.t('map.title')}")
@@ -96,9 +99,9 @@ if df is not None and not df.empty:
     if len(map_df) > 0:
         st.markdown(f"### 🗺️ {tm.t('nav.map')}")
         
-        # إنشاء الخريطة
-        houses_map = create_houses_map(map_df)
-        houses_map = add_map_legend(houses_map)
+        # إنشاء الخريطة مع تمرير مدير الترجمات
+        houses_map = create_houses_map(map_df, tm=tm)
+        houses_map = add_map_legend(houses_map, tm=tm)
         
         # عرض الخريطة
         st_folium(houses_map, width=None, height=600)

@@ -9,7 +9,9 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
 from config import *
-from utils.i18n import tm, create_language_switcher, get_dynamic_css
+from utils.i18n import tm
+from utils.styles import get_dynamic_css
+from utils.sidebar import get_sidebar_css, create_language_switcher
 from utils.header import create_header
 from utils.data_loader import (
     load_houses_data,
@@ -22,6 +24,7 @@ from utils.beneficiary_modal import create_beneficiary_modal
 
 st.set_page_config(**PAGE_CONFIG)
 st.markdown(get_dynamic_css(tm), unsafe_allow_html=True)
+st.markdown(get_sidebar_css(tm), unsafe_allow_html=True)
 create_header(page_title=f"👥 {tm.t('beneficiaries.title')}")
 
 with st.sidebar:

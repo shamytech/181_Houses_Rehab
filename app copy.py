@@ -483,6 +483,9 @@ if df is not None and not df.empty:
     
     st.markdown(f"""
     <div {dir_attr}>
+        <div class="section-title">
+            🎯 {tm.t('sections.key_indicators')}
+        </div>
         <div class="grid-8">
             <div class="mini-card indicator-purple">
                 <div class="mini-icon">🏆</div>
@@ -529,14 +532,14 @@ if df is not None and not df.empty:
     """, unsafe_allow_html=True)
     
     # ================================
-    # التخطيط الرئيسي: 4 أقسام متساوية (2+2+2+2)
+    # صف 2: التكاليف + الديموغرافيا (2-1)
     # ================================
-    col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
+    col1, col2 = st.columns([2, 1])
     
     with col1:
         # بطاقة التكاليف
         st.markdown(f"""
-        <div class="vertical-card" style="--gradient-start: #667eea; --gradient-end: #764ba2; display: flex; flex-direction: column; justify-content: space-between; min-height: 400px;">
+        <div class="vertical-card" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
             <div class="vc-title">💰 {tm.t('dashboard.costs')}</div>
             <div class="vc-content">
                 <div class="cost-highlight">
@@ -561,9 +564,52 @@ if df is not None and not df.empty:
         """, unsafe_allow_html=True)
     
     with col2:
+        # بطاقة الديموغرافيا
+        st.markdown(f"""
+        <div class="stats-table" dir="rtl">
+            <div class="st-header">👥 {tm.t('sections.demographics')}</div>
+            <div class="st-row">
+                <span class="st-icon">👨‍👩‍👧‍👦</span>
+                <span class="st-label">{tm.t('metrics.total_families')}</span>
+                <span class="st-value" style="--value-color: #667eea;">{demo_stats.get('إجمالي الأسر', 0)}</span>
+            </div>
+            <div class="st-row">
+                <span class="st-icon">👨</span>
+                <span class="st-label">{tm.t('fields.men')}</span>
+                <span class="st-value" style="--value-color: #3b82f6;">{demo_stats.get('الرجال', 0)}</span>
+            </div>
+            <div class="st-row">
+                <span class="st-icon">👩</span>
+                <span class="st-label">{tm.t('fields.women')}</span>
+                <span class="st-value" style="--value-color: #ec4899;">{demo_stats.get('النساء', 0)}</span>
+            </div>
+            <div class="st-row">
+                <span class="st-icon">👶</span>
+                <span class="st-label">{tm.t('fields.child_boys')} + {tm.t('fields.child_girls')}</span>
+                <span class="st-value" style="--value-color: #f59e0b;">{demo_stats.get('الأطفال الذكور', 0) + demo_stats.get('الأطفال الإناث', 0)}</span>
+            </div>
+            <div class="st-row">
+                <span class="st-icon">♿</span>
+                <span class="st-label">{tm.t('metrics.disabled_persons')}</span>
+                <span class="st-value" style="--value-color: #ef4444;">{demo_stats.get('ذوي الإعاقة', 0)}</span>
+            </div>
+            <div class="st-row">
+                <span class="st-icon">👴</span>
+                <span class="st-label">{tm.t('metrics.elderly')}</span>
+                <span class="st-value" style="--value-color: #8b5cf6;">{demo_stats.get('كبار السن', 0)}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # ================================
+    # صف 3: أنواع المنازل + الملكية والوصول
+    # ================================
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
         # بطاقة أنواع المنازل
         st.markdown(f"""
-        <div class="progress-card" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 400px;">
+        <div class="progress-card">
             <div class="vc-title">🏠 {tm.t('dashboard.house_type')}</div>
             <div class="progress-item">
                 <div class="progress-header">
@@ -604,11 +650,11 @@ if df is not None and not df.empty:
         </div>
         """, unsafe_allow_html=True)
     
-    with col3:
-        # بطاقة الملكية (في الأعلى)
+    with col2:
+        # بطاقة الملكية
         st.markdown(f"""
-        <div class="vertical-card" style="--gradient-start: #10b981; --gradient-end: #059669; min-height: 190px;">
-            <div class="vc-title">� {tm.t('fields.ownership_doc')}</div>
+        <div class="vertical-card" style="--gradient-start: #10b981; --gradient-end: #059669;">
+            <div class="vc-title">📄 {tm.t('fields.ownership_doc')}</div>
             <div class="vc-content">
                 <div class="vc-item" style="--item-color: #10b981;">
                     <span class="vc-item-label">✅ {tm.t('dashboard.has_ownership_doc')}</span>
@@ -621,10 +667,11 @@ if df is not None and not df.empty:
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # بطاقة الوصول الآمن (في الأسفل)
+    
+    with col3:
+        # بطاقة الوصول الآمن
         st.markdown(f"""
-        <div class="vertical-card" style="--gradient-start: #3b82f6; --gradient-end: #1e40af; margin-top: 15px; min-height: 190px;">
+        <div class="vertical-card" style="--gradient-start: #3b82f6; --gradient-end: #1e40af;">
             <div class="vc-title">🚪 {tm.t('fields.safe_access')}</div>
             <div class="vc-content">
                 <div class="vc-item" style="--item-color: #10b981;">
@@ -632,51 +679,127 @@ if df is not None and not df.empty:
                     <span class="vc-item-value">{safe_yes}</span>
                 </div>
                 <div class="vc-item" style="--item-color: #f59e0b;">
-                    <span class="vc-item-label">� {tm.t('dashboard.safe_access_no')}</span>
+                    <span class="vc-item-label">🔴 {tm.t('dashboard.safe_access_no')}</span>
                     <span class="vc-item-value">{safe_no}</span>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
-    with col4:
-        # بطاقة الديموغرافيا
-        st.markdown(f"""
-        <div class="stats-table" dir="rtl" style="min-height: 400px;">
-            <div class="st-header">👥 {tm.t('sections.demographics')}</div>
-            <div class="st-row">
-                <span class="st-icon">👨‍👩‍👧‍👦</span>
-                <span class="st-label">{tm.t('metrics.total_families')}</span>
-                <span class="st-value" style="--value-color: #667eea;">{demo_stats.get('إجمالي الأسر', 0)}</span>
-            </div>
-            <div class="st-row">
-                <span class="st-icon">�</span>
-                <span class="st-label">{tm.t('fields.men')}</span>
-                <span class="st-value" style="--value-color: #3b82f6;">{demo_stats.get('الرجال', 0)}</span>
-            </div>
-            <div class="st-row">
-                <span class="st-icon">👩</span>
-                <span class="st-label">{tm.t('fields.women')}</span>
-                <span class="st-value" style="--value-color: #ec4899;">{demo_stats.get('النساء', 0)}</span>
-            </div>
-            <div class="st-row">
-                <span class="st-icon">👶</span>
-                <span class="st-label">{tm.t('fields.child_boys')} + {tm.t('fields.child_girls')}</span>
-                <span class="st-value" style="--value-color: #f59e0b;">{demo_stats.get('الأطفال الذكور', 0) + demo_stats.get('الأطفال الإناث', 0)}</span>
-            </div>
-            <div class="st-row">
-                <span class="st-icon">♿</span>
-                <span class="st-label">{tm.t('metrics.disabled_persons')}</span>
-                <span class="st-value" style="--value-color: #ef4444;">{demo_stats.get('ذوي الإعاقة', 0)}</span>
-            </div>
-            <div class="st-row">
-                <span class="st-icon">👴</span>
-                <span class="st-label">{tm.t('metrics.elderly')}</span>
-                <span class="st-value" style="--value-color: #8b5cf6;">{demo_stats.get('كبار السن', 0)}</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    # ================================
+    # المخططات التفاعلية
+    # ================================
+    st.markdown(f'<div class="section-title">📈 {tm.t("sections.cost_analysis")}</div>', unsafe_allow_html=True)
     
-   
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # مخطط حالة الضرر
+        damage_counts = get_damage_status_counts(df)
+        if damage_counts:
+            fig = create_damage_pie_chart(damage_counts)
+            fig.update_layout(
+                title=tm.t('sections.damage_distribution'),
+                height=350,
+                font=dict(
+                    family="Tajawal, Cairo, sans-serif" if tm.get_current_language() == 'ar' else "Inter, sans-serif",
+                    size=14
+                )
+            )
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        # مخطط التوزيع الجغرافي
+        location_counts = get_location_counts(df)
+        if location_counts:
+            fig = create_location_bar_chart(location_counts)
+            fig.update_layout(
+                title=tm.t('sections.geographic_distribution'),
+                height=350,
+                font=dict(
+                    family="Tajawal, Cairo, sans-serif" if tm.get_current_language() == 'ar' else "Inter, sans-serif",
+                    size=14
+                )
+            )
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # ================================
+    # إحصائيات البنود
+    # ================================
+    if main_items_df is not None and not main_items_df.empty:
+        st.markdown(f'<div class="section-title">🔧 {tm.t("sections.items_analysis")}</div>', unsafe_allow_html=True)
+        
+        if '_parent_index' in main_items_df.columns and 'البند الرئيسي' in main_items_df.columns:
+            main_counts = main_items_df.groupby('البند الرئيسي').size().reset_index(name='العدد')
+            main_counts = main_counts.nlargest(10, 'العدد')
+            
+            fig = px.bar(
+                main_counts,
+                x='العدد',
+                y='البند الرئيسي',
+                text='العدد',
+                orientation='h',
+                color='العدد',
+                color_continuous_scale='Viridis'
+            )
+            
+            fig.update_traces(textposition='outside')
+            fig.update_layout(
+                title=tm.t('sections.most_requested_items'),
+                showlegend=False,
+                height=400,
+                xaxis_title=tm.t('metrics.houses_count'),
+                yaxis_title="",
+                font=dict(
+                    family="Tajawal, Cairo, sans-serif" if tm.get_current_language() == 'ar' else "Inter, sans-serif",
+                    size=14
+                )
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # ================================
+    # زر التصدير
+    # ================================
+    st.markdown(f'<div class="section-title">📥 {tm.t("statistics.export_reports")}</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        summary_data = {
+            tm.t('metrics.total_applications'): evaluated_count,
+            tm.t('metrics.total_families'): demo_stats.get('إجمالي الأسر', 0),
+            tm.t('metrics.total_individuals'): demo_stats.get('إجمالي الأفراد', 0),
+            tm.t('dashboard.total_cost'): f"${total_cost:,.0f}",
+            tm.t('dashboard.average_cost'): f"${avg_cost:,.0f}"
+        }
+        
+        summary_df = pd.DataFrame(list(summary_data.items()), columns=['Indicator', 'Value'])
+        
+        csv = summary_df.to_csv(index=False, encoding='utf-8-sig')
+        st.download_button(
+            label=f"📄 {tm.t('buttons.export_summary_csv')}",
+            data=csv,
+            file_name="statistics_summary.csv",
+            mime="text/csv"
+        )
+    
+    with col2:
+        from io import BytesIO
+        output = BytesIO()
+        
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+            df.to_excel(writer, sheet_name='All Data', index=False)
+        
+        output.seek(0)
+        
+        st.download_button(
+            label=f"📊 {tm.t('buttons.export_full_report')}",
+            data=output,
+            file_name="full_statistics_report.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
 else:
     st.error(f"⚠️ {tm.t('messages.no_data')}")
